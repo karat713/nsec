@@ -14,7 +14,7 @@ namespace NSec.Tests.Core
         [Fact]
         public static void ImportWithNullAlgorithm()
         {
-            Assert.Throws<ArgumentNullException>("algorithm", () => PublicKey.Import(null, ReadOnlySpan<byte>.Empty, 0));
+            Assert.Throws<ArgumentNullException>("algorithm", () => PublicKey.Import(null!, ReadOnlySpan<byte>.Empty, 0));
         }
 
         [Theory]
@@ -45,7 +45,7 @@ namespace NSec.Tests.Core
         [Fact]
         public static void TryImportWithNullAlgorithm()
         {
-            Assert.Throws<ArgumentNullException>("algorithm", () => PublicKey.TryImport(null, ReadOnlySpan<byte>.Empty, 0, out var pk));
+            Assert.Throws<ArgumentNullException>("algorithm", () => PublicKey.TryImport(null!, ReadOnlySpan<byte>.Empty, 0, out var pk));
         }
 
         [Theory]
@@ -78,30 +78,42 @@ namespace NSec.Tests.Core
         [MemberData(nameof(AsymmetricKeyAlgorithms))]
         public static void EqualAndSame(Algorithm a)
         {
-            using (var k = new Key(a))
-            {
-                Assert.Same(k.PublicKey, k.PublicKey);
-                Assert.True(k.PublicKey.Equals(k.PublicKey));
-                Assert.True(k.PublicKey.Equals((object)k.PublicKey));
-                Assert.Equal(k.PublicKey.GetHashCode(), k.PublicKey.GetHashCode());
-            }
+            using var k = new Key(a);
+            Assert.Same(k.PublicKey, k.PublicKey);
+            Assert.True(k.PublicKey.Equals(k.PublicKey));
+            Assert.True(k.PublicKey.Equals((object)k.PublicKey));
+            Assert.Equal(k.PublicKey.GetHashCode(), k.PublicKey.GetHashCode());
         }
 
         [Theory]
         [MemberData(nameof(AsymmetricKeyAlgorithms))]
         public static void EqualButNotSame(Algorithm a)
         {
+            using var k = new Key(a);
+
+            var b = k.Export(KeyBlobFormat.RawPublicKey);
+
+            var pk1 = PublicKey.Import(a, b, KeyBlobFormat.RawPublicKey);
+            var pk2 = PublicKey.Import(a, b, KeyBlobFormat.RawPublicKey);
+
+            Assert.NotSame(pk1, pk2);
+            Assert.True(pk1.Equals(pk2));
+            Assert.True(pk1.Equals((object)pk2));
+            Assert.Equal(pk1.GetHashCode(), pk2.GetHashCode());
+        }
+
+        [Theory]
+        [MemberData(nameof(AsymmetricKeyAlgorithms))]
+        public static void EqualNull(Algorithm a)
+        {
             using (var k = new Key(a))
             {
-                var b = k.Export(KeyBlobFormat.RawPublicKey);
+                Assert.False(k.PublicKey.Equals((PublicKey?)null));
+            }
 
-                var pk1 = PublicKey.Import(a, b, KeyBlobFormat.RawPublicKey);
-                var pk2 = PublicKey.Import(a, b, KeyBlobFormat.RawPublicKey);
-
-                Assert.NotSame(pk1, pk2);
-                Assert.True(pk1.Equals(pk2));
-                Assert.True(pk1.Equals((object)pk2));
-                Assert.Equal(pk1.GetHashCode(), pk2.GetHashCode());
+            using (var k = new Key(a))
+            {
+                Assert.False(k.PublicKey.Equals((object?)null));
             }
         }
 
@@ -113,36 +125,115 @@ namespace NSec.Tests.Core
         [MemberData(nameof(AsymmetricKeyAlgorithms))]
         public static void ExportWithFormatMin(Algorithm a)
         {
-            using (var k = new Key(a))
-            {
-                Assert.Throws<ArgumentException>("format", () => k.PublicKey.Export((KeyBlobFormat)int.MinValue));
-            }
+            using var k = new Key(a);
+
+            Assert.Throws<ArgumentException>("format", () => k.PublicKey.Export((KeyBlobFormat)int.MinValue));
         }
 
         [Theory]
         [MemberData(nameof(AsymmetricKeyAlgorithms))]
         public static void ExportWithFormatMax(Algorithm a)
         {
-            using (var k = new Key(a))
-            {
-                Assert.Throws<ArgumentException>("format", () => k.PublicKey.Export((KeyBlobFormat)int.MaxValue));
-            }
+            using var k = new Key(a);
+
+            Assert.Throws<ArgumentException>("format", () => k.PublicKey.Export((KeyBlobFormat)int.MaxValue));
         }
 
         [Theory]
         [MemberData(nameof(PublicKeyBlobFormats))]
         public static void ExportPublicKey(Algorithm a, KeyBlobFormat format)
         {
-            using (var k = new Key(a))
-            {
-                var b = k.PublicKey.Export(format);
-                Assert.NotNull(b);
+            using var k = new Key(a);
 
-                var pk = PublicKey.Import(a, b, format);
-                Assert.NotNull(pk);
-                Assert.Equal(k.PublicKey, pk);
-                Assert.Same(a, pk.Algorithm);
-            }
+            var b = k.PublicKey.Export(format);
+            Assert.NotNull(b);
+
+            var pk = PublicKey.Import(a, b, format);
+            Assert.NotNull(pk);
+            Assert.Equal(k.PublicKey, pk);
+            Assert.Same(a, pk.Algorithm);
+        }
+
+        #endregion
+
+        #region GetExportBlobSize
+
+        [Theory]
+        [MemberData(nameof(PublicKeyBlobFormats))]
+        public static void GetExportBlobSize(Algorithm a, KeyBlobFormat format)
+        {
+            using var k = new Key(a);
+
+            var b = k.PublicKey.Export(format);
+            Assert.NotNull(b);
+
+            var blobSize = k.PublicKey.GetExportBlobSize(format);
+            Assert.Equal(b.Length, blobSize);
+        }
+
+        #endregion
+
+        #region TryExport
+
+        [Theory]
+        [MemberData(nameof(AsymmetricKeyAlgorithms))]
+        public static void TryExportWithFormatMin(Algorithm a)
+        {
+            using var k = new Key(a);
+
+            Assert.Throws<ArgumentException>("format", () => k.PublicKey.TryExport((KeyBlobFormat)int.MinValue, Span<byte>.Empty, out _));
+        }
+
+        [Theory]
+        [MemberData(nameof(AsymmetricKeyAlgorithms))]
+        public static void TryExportWithFormatMax(Algorithm a)
+        {
+            using var k = new Key(a);
+
+            Assert.Throws<ArgumentException>("format", () => k.PublicKey.TryExport((KeyBlobFormat)int.MaxValue, Span<byte>.Empty, out _));
+        }
+
+        [Theory]
+        [MemberData(nameof(PublicKeyBlobFormats))]
+        public static void TryExportSmaller(Algorithm a, KeyBlobFormat format)
+        {
+            using var k = new Key(a);
+
+            Assert.False(k.PublicKey.TryExport(format, Span<byte>.Empty, out _));
+        }
+
+        [Theory]
+        [MemberData(nameof(PublicKeyBlobFormats))]
+        public static void TryExportExact(Algorithm a, KeyBlobFormat format)
+        {
+            using var k = new Key(a);
+
+            var expected = k.PublicKey.GetExportBlobSize(format);
+            var b = new byte[expected + 0];
+            Assert.True(k.PublicKey.TryExport(format, b, out var actual));
+            Assert.Equal(expected, actual);
+
+            var pk = PublicKey.Import(a, b, format);
+            Assert.NotNull(pk);
+            Assert.Equal(k.PublicKey, pk);
+            Assert.Same(a, pk.Algorithm);
+        }
+
+        [Theory]
+        [MemberData(nameof(PublicKeyBlobFormats))]
+        public static void TryExportLarger(Algorithm a, KeyBlobFormat format)
+        {
+            using var k = new Key(a);
+
+            var expected = k.PublicKey.GetExportBlobSize(format);
+            var b = new byte[expected + 100];
+            Assert.True(k.PublicKey.TryExport(format, b, out var actual));
+            Assert.Equal(expected, actual);
+
+            var pk = PublicKey.Import(a, new ReadOnlySpan<byte>(b, 0, actual), format);
+            Assert.NotNull(pk);
+            Assert.Equal(k.PublicKey, pk);
+            Assert.Same(a, pk.Algorithm);
         }
 
         #endregion

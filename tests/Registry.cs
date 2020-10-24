@@ -65,7 +65,9 @@ namespace NSec.Tests
 
         public static readonly TheoryData<PasswordBasedKeyDerivationAlgorithm> PasswordHashAlgorithms = new TheoryData<PasswordBasedKeyDerivationAlgorithm>
         {
+            // intentionally weak parameters for unit tests
             new Argon2i(1, 1 << 12, 3),
+            new Argon2id(1, 1 << 12, 3),
             new Scrypt(1 << 11, 5, 1),
             new Pbkdf2HmacSha256(10),
         };
@@ -112,7 +114,9 @@ namespace NSec.Tests
             new ConcatKdfSha256(),
             KeyDerivationAlgorithm.HkdfSha256,
             KeyDerivationAlgorithm.HkdfSha512,
+            // intentionally weak parameters for unit tests
             new Argon2i(1, 1 << 12, 3),
+            new Argon2id(1, 1 << 12, 3),
             new Scrypt(1 << 11, 5, 1),
             new Pbkdf2HmacSha256(10),
         };

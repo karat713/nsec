@@ -4,7 +4,12 @@ workflows:
   version: 2
   test:
     jobs:
+      - alpine3.10:
+          requires:
       - centos7:
+          requires:
+            - macos10.13
+      - centos8:
           requires:
             - macos10.13
       - debian9:
@@ -13,10 +18,13 @@ workflows:
       - debian10:
           requires:
             - macos10.13
-      - fedora29:
+      - fedora30:
           requires:
             - macos10.13
-      - fedora30:
+      - fedora31:
+          requires:
+            - macos10.13
+      - fedora32:
           requires:
             - macos10.13
       - opensuse15:
@@ -27,10 +35,17 @@ workflows:
       - ubuntu18.04:
           requires:
             - macos10.13
+      - ubuntu20.04:
+          requires:
+            - macos10.13
       - macos10.13:
           requires:
+            - alpine3.10
             - ubuntu16.04
       - macos10.14:
+          requires:
+            - macos10.13
+      - macos10.15:
           requires:
             - macos10.13
 
@@ -39,41 +54,38 @@ shared:
     DOTNET_CLI_TELEMETRY_OPTOUT: 1
     DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
     TERM: dumb
+    DEBIAN_FRONTEND: noninteractive
   dotnet-install-2-1: &dotnet-install-2-1
     run:
       name: Install .NET Core 2.1 Runtime
       command: |
         if [ ! -f ~/dotnet-install.sh ]; then curl -fsLo ~/dotnet-install.sh 'https://dot.net/v1/dotnet-install.sh'; fi
         bash ~/dotnet-install.sh --channel 2.1 --version latest --install-dir ~/.dotnet --no-path --runtime dotnet
-  dotnet-install-2-2: &dotnet-install-2-2
+  dotnet-install-3-1: &dotnet-install-3-1
     run:
-      name: Install .NET Core 2.2 Runtime
+      name: Install .NET Core 3.1 SDK
       command: |
         if [ ! -f ~/dotnet-install.sh ]; then curl -fsLo ~/dotnet-install.sh 'https://dot.net/v1/dotnet-install.sh'; fi
-        bash ~/dotnet-install.sh --channel 2.2 --version latest --install-dir ~/.dotnet --no-path --runtime dotnet
-  dotnet-install-3-0: &dotnet-install-3-0
-    run:
-      name: Install .NET Core 3.0 SDK
-      command: |
-        if [ ! -f ~/dotnet-install.sh ]; then curl -fsLo ~/dotnet-install.sh 'https://dot.net/v1/dotnet-install.sh'; fi
-        bash ~/dotnet-install.sh --channel 3.0 --version latest --install-dir ~/.dotnet --no-path
+        bash ~/dotnet-install.sh --channel 3.1 --version latest --install-dir ~/.dotnet --no-path
         ~/.dotnet/dotnet --info
         echo 'export PATH=~/.dotnet:$PATH' >> $BASH_ENV
   generate-restore-graph: &generate-restore-graph
     run:
       name: Generate Dependency Graph
       command: |
-        dotnet msbuild -t:GenerateRestoreGraphFile
+        dotnet msbuild -t:GenerateRestoreGraphFile -p:Version=1.0.0-restore -p:RestoreGraphOutputPath=/tmp/restore.json
         cat /tmp/restore.json
       working_directory: tests
-      environment:
-        RestoreGraphOutputPath: /tmp/restore.json
-        Version: 1.0.0-restore
   restore-cache: &restore-cache
     restore_cache:
       keys:
         - 'linux-nuget-packages-{{ checksum "/tmp/restore.json" }}'
         - 'linux-nuget-packages'
+  restore-cache-alpine: &restore-cache-alpine
+    restore_cache:
+      keys:
+        - 'alpine-nuget-packages-{{ checksum "/tmp/restore.json" }}'
+        - 'alpine-nuget-packages'
   restore-cache-macos: &restore-cache-macos
     restore_cache:
       keys:
@@ -89,6 +101,11 @@ shared:
       key: 'linux-nuget-packages-{{ checksum "/tmp/restore.json" }}'
       paths:
         - ~/.nuget/packages
+  save-cache-alpine: &save-cache-alpine
+    save_cache:
+      key: 'alpine-nuget-packages-{{ checksum "/tmp/restore.json" }}'
+      paths:
+        - ~/.nuget/packages
   save-cache-macos: &save-cache-macos
     save_cache:
       key: 'macos-nuget-packages-{{ checksum "/tmp/restore.json" }}'
@@ -102,52 +119,75 @@ shared:
     run:
       name: Run unit tests (Release) (.NET Core 2.1)
       command: dotnet test tests -c Release -f netcoreapp2.1
-  dotnet-test-debug-2-2: &dotnet-test-debug-2-2
+  dotnet-test-debug-3-1: &dotnet-test-debug-3-1
     run:
-      name: Run unit tests (Debug) (.NET Core 2.2)
-      command: dotnet test tests -c Debug -f netcoreapp2.2
-  dotnet-test-release-2-2: &dotnet-test-release-2-2
+      name: Run unit tests (Debug) (.NET Core 3.1)
+      command: dotnet test tests -c Debug -f netcoreapp3.1
+  dotnet-test-release-3-1: &dotnet-test-release-3-1
     run:
-      name: Run unit tests (Release) (.NET Core 2.2)
-      command: dotnet test tests -c Release -f netcoreapp2.2
-  dotnet-test-debug-3-0: &dotnet-test-debug-3-0
-    run:
-      name: Run unit tests (Debug) (.NET Core 3.0)
-      command: dotnet test tests -c Debug -f netcoreapp3.0
-  dotnet-test-release-3-0: &dotnet-test-release-3-0
-    run:
-      name: Run unit tests (Release) (.NET Core 3.0)
-      command: dotnet test tests -c Release -f netcoreapp3.0
+      name: Run unit tests (Release) (.NET Core 3.1)
+      command: dotnet test tests -c Release -f netcoreapp3.1
 
 jobs:
 
+  alpine3.10:
+    docker:
+      - image: mcr.microsoft.com/dotnet/core/sdk:3.1-alpine3.10
+    environment: *environment
+    steps:
+      - checkout
+      - *generate-restore-graph
+      - *restore-cache-alpine
+      - *dotnet-restore
+      - *save-cache-alpine
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
+
   centos7:
     docker:
-      - image: centos:7.6.1810
+      - image: centos:7
     environment: *environment
     steps:
       - run:
           name: Install Prerequisites
           no_output_timeout: 2m
-          command: yum install -q -y curl ca-certificates libunwind libicu
+          command: yum install -q -y curl ca-certificates libicu
       - *dotnet-install-2-1
-      - *dotnet-install-2-2
-      - *dotnet-install-3-0
+      - *dotnet-install-3-1
       - checkout
       - *generate-restore-graph
       - *restore-cache
       - *dotnet-restore
       - *save-cache
-      - *dotnet-test-debug-3-0
-      - *dotnet-test-release-3-0
-      - *dotnet-test-debug-2-2
-      - *dotnet-test-release-2-2
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
+      - *dotnet-test-debug-2-1
+      - *dotnet-test-release-2-1
+
+  centos8:
+    docker:
+      - image: centos:8
+    environment: *environment
+    steps:
+      - run:
+          name: Install Prerequisites
+          no_output_timeout: 2m
+          command: yum install -y curl ca-certificates libicu
+      - *dotnet-install-2-1
+      - *dotnet-install-3-1
+      - checkout
+      - *generate-restore-graph
+      - *restore-cache
+      - *dotnet-restore
+      - *save-cache
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
       - *dotnet-test-debug-2-1
       - *dotnet-test-release-2-1
 
   debian9:
     docker:
-      - image: debian:9.11
+      - image: debian:9
     environment: *environment
     steps:
       - run:
@@ -155,25 +195,22 @@ jobs:
           no_output_timeout: 2m
           command: |
             apt-get -qq update
-            apt-get -qq install --yes --no-install-recommends curl ca-certificates apt-transport-https gettext libunwind8
+            apt-get -qq install --yes --no-install-recommends curl ca-certificates apt-transport-https gettext
       - *dotnet-install-2-1
-      - *dotnet-install-2-2
-      - *dotnet-install-3-0
+      - *dotnet-install-3-1
       - checkout
       - *generate-restore-graph
       - *restore-cache
       - *dotnet-restore
       - *save-cache
-      - *dotnet-test-debug-3-0
-      - *dotnet-test-release-3-0
-      - *dotnet-test-debug-2-2
-      - *dotnet-test-release-2-2
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
       - *dotnet-test-debug-2-1
       - *dotnet-test-release-2-1
 
   debian10:
     docker:
-      - image: debian:10.1
+      - image: debian:10
     environment: *environment
     steps:
       - run:
@@ -181,36 +218,16 @@ jobs:
           no_output_timeout: 2m
           command: |
             apt-get -qq update
-            apt-get -qq install --yes --no-install-recommends curl ca-certificates apt-transport-https gettext libunwind8
-      - *dotnet-install-3-0
+            apt-get -qq install --yes --no-install-recommends curl ca-certificates apt-transport-https gettext
+      - *dotnet-install-2-1
+      - *dotnet-install-3-1
       - checkout
       - *generate-restore-graph
       - *restore-cache
       - *dotnet-restore
       - *save-cache
-      - *dotnet-test-debug-3-0
-      - *dotnet-test-release-3-0
-
-  fedora29:
-    docker:
-      - image: fedora:29
-    environment: *environment
-    steps:
-      - run:
-          name: Install Prerequisites
-          no_output_timeout: 2m
-          command: dnf install -q -y curl ca-certificates findutils ncurses libunwind libicu compat-openssl10
-      - *dotnet-install-2-2
-      - *dotnet-install-3-0
-      - checkout
-      - *generate-restore-graph
-      - *restore-cache
-      - *dotnet-restore
-      - *save-cache
-      - *dotnet-test-debug-3-0
-      - *dotnet-test-release-3-0
-      - *dotnet-test-debug-2-2
-      - *dotnet-test-release-2-2
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
       - *dotnet-test-debug-2-1
       - *dotnet-test-release-2-1
 
@@ -222,20 +239,57 @@ jobs:
       - run:
           name: Install Prerequisites
           no_output_timeout: 2m
-          command: dnf install -q -y curl ca-certificates findutils ncurses libunwind libicu compat-openssl10
-      - *dotnet-install-2-2
-      - *dotnet-install-3-0
+          command: dnf install -q -y curl ca-certificates findutils ncurses libicu compat-openssl10
+      - *dotnet-install-2-1
+      - *dotnet-install-3-1
       - checkout
       - *generate-restore-graph
       - *restore-cache
       - *dotnet-restore
       - *save-cache
-      - *dotnet-test-debug-3-0
-      - *dotnet-test-release-3-0
-      - *dotnet-test-debug-2-2
-      - *dotnet-test-release-2-2
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
       - *dotnet-test-debug-2-1
       - *dotnet-test-release-2-1
+
+  fedora31:
+    docker:
+      - image: fedora:31
+    environment: *environment
+    steps:
+      - run:
+          name: Install Prerequisites
+          no_output_timeout: 2m
+          command: dnf install -q -y curl ca-certificates findutils ncurses libicu compat-openssl10
+      - *dotnet-install-2-1
+      - *dotnet-install-3-1
+      - checkout
+      - *generate-restore-graph
+      - *restore-cache
+      - *dotnet-restore
+      - *save-cache
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
+      - *dotnet-test-debug-2-1
+      - *dotnet-test-release-2-1
+
+  fedora32:
+    docker:
+      - image: fedora:32
+    environment: *environment
+    steps:
+      - run:
+          name: Install Prerequisites
+          no_output_timeout: 2m
+          command: dnf install -q -y curl ca-certificates findutils ncurses libicu compat-openssl10
+      - *dotnet-install-3-1
+      - checkout
+      - *generate-restore-graph
+      - *restore-cache
+      - *dotnet-restore
+      - *save-cache
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
 
   opensuse15:
     docker:
@@ -245,19 +299,16 @@ jobs:
       - run:
           name: Install Prerequisites
           no_output_timeout: 2m
-          command: zypper -q install -y --no-recommends curl ca-certificates gzip tar ncurses-utils libunwind libicu
+          command: zypper -q install -y --no-recommends curl ca-certificates gzip tar ncurses-utils libicu-suse65_1
       - *dotnet-install-2-1
-      - *dotnet-install-2-2
-      - *dotnet-install-3-0
+      - *dotnet-install-3-1
       - checkout
       - *generate-restore-graph
       - *restore-cache
       - *dotnet-restore
       - *save-cache
-      - *dotnet-test-debug-3-0
-      - *dotnet-test-release-3-0
-      - *dotnet-test-debug-2-2
-      - *dotnet-test-release-2-2
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
       - *dotnet-test-debug-2-1
       - *dotnet-test-release-2-1
 
@@ -271,19 +322,16 @@ jobs:
           no_output_timeout: 2m
           command: |
             apt-get -qq update
-            apt-get -qq install --yes --no-install-recommends curl ca-certificates apt-transport-https gettext libunwind8 libicu55 libcurl3
+            apt-get -qq install --yes --no-install-recommends curl ca-certificates apt-transport-https gettext libicu55 libcurl3
       - *dotnet-install-2-1
-      - *dotnet-install-2-2
-      - *dotnet-install-3-0
+      - *dotnet-install-3-1
       - checkout
       - *generate-restore-graph
       - *restore-cache
       - *dotnet-restore
       - *save-cache
-      - *dotnet-test-debug-3-0
-      - *dotnet-test-release-3-0
-      - *dotnet-test-debug-2-2
-      - *dotnet-test-release-2-2
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
       - *dotnet-test-debug-2-1
       - *dotnet-test-release-2-1
 
@@ -297,19 +345,39 @@ jobs:
           no_output_timeout: 2m
           command: |
             apt-get -qq update
-            apt-get -qq install --yes --no-install-recommends curl ca-certificates apt-transport-https gettext libunwind8 libicu60 libssl1.0.0
+            apt-get -qq install --yes --no-install-recommends curl ca-certificates apt-transport-https gettext libicu60 libssl1.0.0
       - *dotnet-install-2-1
-      - *dotnet-install-2-2
-      - *dotnet-install-3-0
+      - *dotnet-install-3-1
       - checkout
       - *generate-restore-graph
       - *restore-cache
       - *dotnet-restore
       - *save-cache
-      - *dotnet-test-debug-3-0
-      - *dotnet-test-release-3-0
-      - *dotnet-test-debug-2-2
-      - *dotnet-test-release-2-2
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
+      - *dotnet-test-debug-2-1
+      - *dotnet-test-release-2-1
+
+  ubuntu20.04:
+    docker:
+      - image: ubuntu:20.04
+    environment: *environment
+    steps:
+      - run:
+          name: Install Prerequisites
+          no_output_timeout: 2m
+          command: |
+            apt-get -qq update
+            apt-get -qq install --yes --no-install-recommends curl ca-certificates apt-transport-https gettext libicu66
+      - *dotnet-install-2-1
+      - *dotnet-install-3-1
+      - checkout
+      - *generate-restore-graph
+      - *restore-cache
+      - *dotnet-restore
+      - *save-cache
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
       - *dotnet-test-debug-2-1
       - *dotnet-test-release-2-1
 
@@ -319,17 +387,14 @@ jobs:
     environment: *environment
     steps:
       - *dotnet-install-2-1
-      - *dotnet-install-2-2
-      - *dotnet-install-3-0
+      - *dotnet-install-3-1
       - checkout
       - *generate-restore-graph
       - *restore-cache-macos
       - *dotnet-restore
       - *save-cache-macos
-      - *dotnet-test-debug-3-0
-      - *dotnet-test-release-3-0
-      - *dotnet-test-debug-2-2
-      - *dotnet-test-release-2-2
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
       - *dotnet-test-debug-2-1
       - *dotnet-test-release-2-1
 
@@ -339,16 +404,30 @@ jobs:
     environment: *environment
     steps:
       - *dotnet-install-2-1
-      - *dotnet-install-2-2
-      - *dotnet-install-3-0
+      - *dotnet-install-3-1
       - checkout
       - *generate-restore-graph
       - *restore-cache-macos
       - *dotnet-restore
       - *save-cache-macos
-      - *dotnet-test-debug-3-0
-      - *dotnet-test-release-3-0
-      - *dotnet-test-debug-2-2
-      - *dotnet-test-release-2-2
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
+      - *dotnet-test-debug-2-1
+      - *dotnet-test-release-2-1
+
+  macos10.15:
+    macos:
+      xcode: "11.3.0"
+    environment: *environment
+    steps:
+      - *dotnet-install-2-1
+      - *dotnet-install-3-1
+      - checkout
+      - *generate-restore-graph
+      - *restore-cache-macos
+      - *dotnet-restore
+      - *save-cache-macos
+      - *dotnet-test-debug-3-1
+      - *dotnet-test-release-3-1
       - *dotnet-test-debug-2-1
       - *dotnet-test-release-2-1

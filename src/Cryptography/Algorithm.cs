@@ -14,23 +14,23 @@ namespace NSec.Cryptography
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static new bool Equals(
-            object objA,
-            object objB)
+            object? objA,
+            object? objB)
         {
             return object.Equals(objA, objB);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static new bool ReferenceEquals(
-            object objA,
-            object objB)
+            object? objA,
+            object? objB)
         {
             return object.ReferenceEquals(objA, objB);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public sealed override bool Equals(
-            object obj)
+            object? obj)
         {
             return this == obj;
         }
@@ -42,7 +42,7 @@ namespace NSec.Cryptography
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public sealed override string ToString()
+        public sealed override string? ToString()
         {
             return GetType().ToString();
         }
@@ -53,7 +53,7 @@ namespace NSec.Cryptography
             MemoryPool<byte> memoryPool,
             out ReadOnlyMemory<byte> memory,
             out IMemoryOwner<byte> owner,
-            out PublicKey publicKey)
+            out PublicKey? publicKey)
         {
             throw Error.NotSupported_CreateKey();
         }
@@ -102,8 +102,8 @@ namespace NSec.Cryptography
             KeyBlobFormat format,
             MemoryPool<byte> memoryPool,
             out ReadOnlyMemory<byte> memory,
-            out IMemoryOwner<byte> owner,
-            out PublicKey publicKey)
+            out IMemoryOwner<byte>? owner,
+            out PublicKey? publicKey)
         {
             throw Error.NotSupported_ImportKey();
         }

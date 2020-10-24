@@ -20,7 +20,7 @@ namespace NSec.Cryptography
     //
     public abstract class KeyAgreementAlgorithm : Algorithm
     {
-        private static X25519 s_X25519;
+        private static X25519? s_X25519;
 
         private readonly int _privateKeySize;
         private readonly int _publicKeySize;
@@ -44,7 +44,7 @@ namespace NSec.Cryptography
         {
             get
             {
-                X25519 instance = s_X25519;
+                X25519? instance = s_X25519;
                 if (instance == null)
                 {
                     Interlocked.CompareExchange(ref s_X25519, new X25519(), null);
@@ -60,7 +60,7 @@ namespace NSec.Cryptography
 
         public int SharedSecretSize => _sharedSecretSize;
 
-        public SharedSecret Agree(
+        public SharedSecret? Agree(
             Key key,
             PublicKey otherPartyPublicKey,
             in SharedSecretCreationParameters creationParameters = default)
@@ -68,14 +68,14 @@ namespace NSec.Cryptography
             if (key == null)
                 throw Error.ArgumentNull_Key(nameof(key));
             if (key.Algorithm != this)
-                throw Error.Argument_KeyWrongAlgorithm(nameof(key), key.Algorithm.GetType().FullName, GetType().FullName);
+                throw Error.Argument_KeyAlgorithmMismatch(nameof(key), nameof(key));
             if (otherPartyPublicKey == null)
                 throw Error.ArgumentNull_Key(nameof(otherPartyPublicKey));
             if (otherPartyPublicKey.Algorithm != this)
-                throw Error.Argument_KeyWrongAlgorithm(nameof(otherPartyPublicKey), key.Algorithm.GetType().FullName, GetType().FullName);
+                throw Error.Argument_PublicKeyAlgorithmMismatch(nameof(otherPartyPublicKey), nameof(otherPartyPublicKey));
 
             ReadOnlyMemory<byte> memory = default;
-            IMemoryOwner<byte> owner = default;
+            IMemoryOwner<byte>? owner = default;
             bool success = false;
 
             try

@@ -8,7 +8,7 @@ using static Interop.Libsodium;
 namespace NSec.Experimental.PasswordBased
 {
     //
-    //  Argon2i
+    //  Argon2id
     //
     //  References
     //
@@ -50,32 +50,32 @@ namespace NSec.Experimental.PasswordBased
     //      | Moderate    | 6        | 2^27 bytes (128 MiB) | 1 | 2^17 | 6 |
     //      | Sensitive   | 8        | 2^29 bytes (512 MiB) | 1 | 2^19 | 8 |
     //
-    public sealed class Argon2i : PasswordBasedKeyDerivationAlgorithm
+    public sealed class Argon2id : PasswordBasedKeyDerivationAlgorithm
     {
         private static int s_selfTest;
 
         private readonly UIntPtr _memLimit;
         private readonly ulong _opsLimit;
 
-        public Argon2i() : this(1, 1 << 17, 6)
+        public Argon2id() : this(1, 1 << 17, 6)
         {
         }
 
-        internal /*public*/ Argon2i(int p, long m, int t) : base(
-            saltSize: crypto_pwhash_argon2i_SALTBYTES,
+        internal /*public*/ Argon2id(int p, long m, int t) : base(
+            saltSize: crypto_pwhash_argon2id_SALTBYTES,
             maxCount: int.MaxValue)
         {
-            // checks from libsodium/crypto_pwhash/argon2/pwhash_argon2i.c
+            // checks from libsodium/crypto_pwhash/argon2/pwhash_argon2id.c
             if (p != 1)
             {
                 throw new ArgumentOutOfRangeException(nameof(p));
             }
-            if (m < crypto_pwhash_argon2i_MEMLIMIT_MIN / 1024 ||
+            if (m < crypto_pwhash_argon2id_MEMLIMIT_MIN / 1024 ||
                 m > (IntPtr.Size == sizeof(long) ? 4398046510080 / 1024 : 2147483648 / 1024))
             {
                 throw new ArgumentOutOfRangeException(nameof(m));
             }
-            if (t < crypto_pwhash_argon2i_OPSLIMIT_MIN)
+            if (t < crypto_pwhash_argon2id_OPSLIMIT_MIN)
             {
                 throw new ArgumentOutOfRangeException(nameof(t));
             }
@@ -101,9 +101,9 @@ namespace NSec.Experimental.PasswordBased
             ReadOnlySpan<byte> salt,
             Span<byte> bytes)
         {
-            Debug.Assert(salt.Length == crypto_pwhash_argon2i_SALTBYTES);
+            Debug.Assert(salt.Length == crypto_pwhash_argon2id_SALTBYTES);
 
-            const int MinCount = crypto_pwhash_argon2i_BYTES_MIN;
+            const int MinCount = crypto_pwhash_argon2id_BYTES_MIN;
             bool min = bytes.Length < MinCount;
             byte* temp = stackalloc byte[MinCount];
 
@@ -113,7 +113,7 @@ namespace NSec.Experimental.PasswordBased
                 fixed (byte* salt_ = salt)
                 fixed (byte* @out = bytes)
                 {
-                    int error = crypto_pwhash_argon2i(
+                    int error = crypto_pwhash_argon2id(
                         min ? temp : @out,
                         (ulong)(min ? MinCount : bytes.Length),
                         (sbyte*)@in,
@@ -121,7 +121,7 @@ namespace NSec.Experimental.PasswordBased
                         salt_,
                         _opsLimit,
                         _memLimit,
-                        crypto_pwhash_argon2i_ALG_ARGON2I13);
+                        crypto_pwhash_argon2id_ALG_ARGON2ID13);
 
                     if (min)
                     {
@@ -139,14 +139,14 @@ namespace NSec.Experimental.PasswordBased
 
         private static void SelfTest()
         {
-            if ((crypto_pwhash_argon2i_alg_argon2i13() != crypto_pwhash_argon2i_ALG_ARGON2I13) ||
-                (crypto_pwhash_argon2i_bytes_max() != (UIntPtr)uint.MaxValue) ||
-                (crypto_pwhash_argon2i_bytes_min() != (UIntPtr)crypto_pwhash_argon2i_BYTES_MIN) ||
-                (crypto_pwhash_argon2i_memlimit_max() != (UIntPtr)(IntPtr.Size == sizeof(long) ? 4398046510080 : 2147483648)) ||
-                (crypto_pwhash_argon2i_memlimit_min() != (UIntPtr)crypto_pwhash_argon2i_MEMLIMIT_MIN) ||
-                (crypto_pwhash_argon2i_opslimit_max() != (UIntPtr)uint.MaxValue) ||
-                (crypto_pwhash_argon2i_opslimit_min() != (UIntPtr)crypto_pwhash_argon2i_OPSLIMIT_MIN) ||
-                (crypto_pwhash_argon2i_saltbytes() != (UIntPtr)crypto_pwhash_argon2i_SALTBYTES))
+            if ((crypto_pwhash_argon2id_alg_argon2id13() != crypto_pwhash_argon2id_ALG_ARGON2ID13) ||
+                (crypto_pwhash_argon2id_bytes_max() != (UIntPtr)uint.MaxValue) ||
+                (crypto_pwhash_argon2id_bytes_min() != (UIntPtr)crypto_pwhash_argon2id_BYTES_MIN) ||
+                (crypto_pwhash_argon2id_memlimit_max() != (UIntPtr)(IntPtr.Size == sizeof(long) ? 4398046510080 : 2147483648)) ||
+                (crypto_pwhash_argon2id_memlimit_min() != (UIntPtr)crypto_pwhash_argon2id_MEMLIMIT_MIN) ||
+                (crypto_pwhash_argon2id_opslimit_max() != (UIntPtr)uint.MaxValue) ||
+                (crypto_pwhash_argon2id_opslimit_min() != (UIntPtr)crypto_pwhash_argon2id_OPSLIMIT_MIN) ||
+                (crypto_pwhash_argon2id_saltbytes() != (UIntPtr)crypto_pwhash_argon2id_SALTBYTES))
             {
                 throw Error.InvalidOperation_InitializationFailed();
             }

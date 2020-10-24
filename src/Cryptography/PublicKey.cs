@@ -16,8 +16,6 @@ namespace NSec.Cryptography
         internal PublicKey(
             Algorithm algorithm)
         {
-            Debug.Assert(algorithm != null);
-
             _algorithm = algorithm;
         }
 
@@ -47,7 +45,7 @@ namespace NSec.Cryptography
             Algorithm algorithm,
             ReadOnlySpan<byte> blob,
             KeyBlobFormat format,
-            out PublicKey result)
+            out PublicKey? result)
         {
             if (algorithm == null)
             {
@@ -65,17 +63,17 @@ namespace NSec.Cryptography
         }
 
         public bool Equals(
-            PublicKey other)
+            PublicKey? other)
         {
             if (Unsafe.SizeOf<PublicKeyBytes>() != 8 * sizeof(uint))
             {
                 throw Error.InvalidOperation_InternalError();
             }
-            if (this == other)
+            if (other == this)
             {
                 return true;
             }
-            if (_algorithm != other._algorithm)
+            if (other == null || other._algorithm != _algorithm)
             {
                 return false;
             }
@@ -95,7 +93,7 @@ namespace NSec.Cryptography
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public override bool Equals(
-            object obj)
+            object? obj)
         {
             return Equals(obj as PublicKey);
         }
@@ -113,6 +111,13 @@ namespace NSec.Cryptography
 
             Debug.Assert(blobSize == blob.Length);
             return blob;
+        }
+
+        public int GetExportBlobSize(
+            KeyBlobFormat format)
+        {
+            _algorithm.TryExportPublicKey(this, format, Span<byte>.Empty, out int blobSize);
+            return blobSize;
         }
 
         public override int GetHashCode()
@@ -138,9 +143,17 @@ namespace NSec.Cryptography
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public override string ToString()
+        public override string? ToString()
         {
             return typeof(PublicKey).ToString();
+        }
+
+        public bool TryExport(
+            KeyBlobFormat format,
+            Span<byte> blob,
+            out int blobSize)
+        {
+            return _algorithm.TryExportPublicKey(this, format, blob, out blobSize);
         }
 
         internal ref PublicKeyBytes GetPinnableReference()

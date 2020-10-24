@@ -25,6 +25,11 @@ Gets the AES256-GCM AEAD algorithm.
 
     public static Aes256Gcm Aes256Gcm { get; }
 
+#### Exceptions
+
+PlatformNotSupportedException
+: The platform does not support hardware-accelerated AES.
+
 #### Remarks
 
 The implementation of AES-GCM in NSec is hardware-accelerated and requires an
@@ -45,7 +50,7 @@ Gets the ChaCha20-Poly1305 AEAD algorithm.
 
 ### KeySize
 
-Gets the size of keys used for encryption and decryption.
+Gets the size of the key used for encryption and decryption.
 
     public int KeySize { get; }
 
@@ -56,7 +61,7 @@ The key size, in bytes.
 
 ### NonceSize
 
-Gets the size of nonces used for encryption and decryption.
+Gets the size of the nonce used for encryption and decryption.
 
     public int NonceSize { get; }
 
@@ -67,7 +72,7 @@ The nonce size, in bytes.
 
 ### TagSize
 
-Gets the size of authentication tags.
+Gets the size of the authentication tag.
 
     public int TagSize { get; }
 
@@ -230,15 +235,18 @@ array of bytes.
 
 key
 : The [[Key|Key Class]] to use for decryption.
-    Authentication fails if this is not the key used for encryption.
+    Authentication fails if this is not the same key that was used for
+    encryption.
 
 nonce
 : The [[Nonce|Nonce Struct]] to use for decryption.
-    Authentication fails if this is not the nonce used for encryption.
+    Authentication fails if this is not the same nonce that was used for
+    encryption.
 
 associatedData
 : Optional additional data to authenticate.
-    Authentication fails if this is not the additional data used for encryption.
+    Authentication fails if this is not the same additional data that was used
+    for encryption.
 
 ciphertext
 : The encrypted data to authenticate and decrypt.
@@ -282,15 +290,18 @@ with the decrypted plaintext.
 
 key
 : The [[Key|Key Class]] to use for decryption.
-    Authentication fails if this is not the key used for encryption.
+    Authentication fails if this is not the same key that was used for
+    encryption.
 
 nonce
 : The [[Nonce|Nonce Struct]] to use for decryption.
-    Authentication fails if this is not the nonce used for encryption.
+    Authentication fails if this is not the same nonce that was used for
+    encryption.
 
 associatedData
 : Optional additional data to authenticate.
-    Authentication fails if this is not the additional data used for encryption.
+    Authentication fails if this is not the same additional data that was used
+    for encryption.
 
 ciphertext
 : The encrypted data to authenticate and decrypt.

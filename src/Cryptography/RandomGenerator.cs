@@ -10,7 +10,7 @@ namespace NSec.Cryptography
 {
     public abstract class RandomGenerator
     {
-        private static RandomGenerator s_Default;
+        private static RandomGenerator? s_Default;
 
         private protected RandomGenerator()
         {
@@ -21,7 +21,7 @@ namespace NSec.Cryptography
         {
             get
             {
-                RandomGenerator instance = s_Default;
+                RandomGenerator? instance = s_Default;
                 if (instance == null)
                 {
                     Interlocked.CompareExchange(ref s_Default, new RandomGenerator.System(), null);
@@ -33,23 +33,23 @@ namespace NSec.Cryptography
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static new bool Equals(
-            object objA,
-            object objB)
+            object? objA,
+            object? objB)
         {
             return object.Equals(objA, objB);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static new bool ReferenceEquals(
-            object objA,
-            object objB)
+            object? objA,
+            object? objB)
         {
             return object.ReferenceEquals(objA, objB);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public sealed override bool Equals(
-            object obj)
+            object? obj)
         {
             return this == obj;
         }
@@ -114,8 +114,8 @@ namespace NSec.Cryptography
             Debug.Assert(seedSize <= 64);
 
             ReadOnlyMemory<byte> memory = default;
-            IMemoryOwner<byte> owner = default;
-            PublicKey publicKey = default;
+            IMemoryOwner<byte>? owner = default;
+            PublicKey? publicKey = default;
             bool success = false;
 
             try
@@ -187,7 +187,7 @@ namespace NSec.Cryptography
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public sealed override string ToString()
+        public sealed override string? ToString()
         {
             return GetType().ToString();
         }

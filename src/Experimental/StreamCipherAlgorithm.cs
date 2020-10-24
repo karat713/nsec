@@ -10,7 +10,7 @@ namespace NSec.Experimental
     // be used only as a building block for a more high level protocol.
     public abstract class StreamCipherAlgorithm : Algorithm
     {
-        private static ChaCha20 s_ChaCha20;
+        private static ChaCha20? s_ChaCha20;
 
         private readonly int _keySize;
         private readonly int _nonceSize;
@@ -30,7 +30,7 @@ namespace NSec.Experimental
         {
             get
             {
-                ChaCha20 instance = s_ChaCha20;
+                ChaCha20? instance = s_ChaCha20;
                 if (instance == null)
                 {
                     Interlocked.CompareExchange(ref s_ChaCha20, new ChaCha20(), null);
@@ -52,7 +52,7 @@ namespace NSec.Experimental
             if (key == null)
                 throw Error.ArgumentNull_Key(nameof(key));
             if (key.Algorithm != this)
-                throw Error.Argument_KeyWrongAlgorithm(nameof(key), key.Algorithm.GetType().FullName, GetType().FullName);
+                throw Error.Argument_KeyAlgorithmMismatch(nameof(key), nameof(key));
             if (nonce.Size != _nonceSize)
                 throw Error.Argument_NonceLength(nameof(nonce), _nonceSize);
             if (count < 0)
@@ -71,7 +71,7 @@ namespace NSec.Experimental
             if (key == null)
                 throw Error.ArgumentNull_Key(nameof(key));
             if (key.Algorithm != this)
-                throw Error.Argument_KeyWrongAlgorithm(nameof(key), key.Algorithm.GetType().FullName, GetType().FullName);
+                throw Error.Argument_KeyAlgorithmMismatch(nameof(key), nameof(key));
             if (nonce.Size != _nonceSize)
                 throw Error.Argument_NonceLength(nameof(nonce), _nonceSize);
 
@@ -86,15 +86,15 @@ namespace NSec.Experimental
             if (key == null)
                 throw Error.ArgumentNull_Key(nameof(key));
             if (key.Algorithm != this)
-                throw Error.Argument_KeyWrongAlgorithm(nameof(key), key.Algorithm.GetType().FullName, GetType().FullName);
+                throw Error.Argument_KeyAlgorithmMismatch(nameof(key), nameof(key));
             if (nonce.Size != _nonceSize)
                 throw Error.Argument_NonceLength(nameof(nonce), _nonceSize);
 
             byte[] output = new byte[input.Length];
             XOrCore(key.Span, in nonce, input, output);
             return output;
-
         }
+
         public void XOr(
             Key key,
             in Nonce nonce,
@@ -104,7 +104,7 @@ namespace NSec.Experimental
             if (key == null)
                 throw Error.ArgumentNull_Key(nameof(key));
             if (key.Algorithm != this)
-                throw Error.Argument_KeyWrongAlgorithm(nameof(key), key.Algorithm.GetType().FullName, GetType().FullName);
+                throw Error.Argument_KeyAlgorithmMismatch(nameof(key), nameof(key));
             if (nonce.Size != _nonceSize)
                 throw Error.Argument_NonceLength(nameof(nonce), _nonceSize);
             if (output.Length != input.Length)
@@ -124,7 +124,7 @@ namespace NSec.Experimental
             if (key == null)
                 throw Error.ArgumentNull_Key(nameof(key));
             if (key.Algorithm != this)
-                throw Error.Argument_KeyWrongAlgorithm(nameof(key), key.Algorithm.GetType().FullName, GetType().FullName);
+                throw Error.Argument_KeyAlgorithmMismatch(nameof(key), nameof(key));
             if (nonce.Size != _nonceSize)
                 throw Error.Argument_NonceLength(nameof(nonce), _nonceSize);
 
@@ -143,7 +143,7 @@ namespace NSec.Experimental
             if (key == null)
                 throw Error.ArgumentNull_Key(nameof(key));
             if (key.Algorithm != this)
-                throw Error.Argument_KeyWrongAlgorithm(nameof(key), key.Algorithm.GetType().FullName, GetType().FullName);
+                throw Error.Argument_KeyAlgorithmMismatch(nameof(key), nameof(key));
             if (nonce.Size != _nonceSize)
                 throw Error.Argument_NonceLength(nameof(nonce), _nonceSize);
             if (output.Length != input.Length)

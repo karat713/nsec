@@ -120,13 +120,13 @@ NotSupportedException
 ## Methods
 
 
-### Equals(PublicKey)
+### Equals(PublicKey?)
 
 Indicates whether the current instance of the [[PublicKey|PublicKey Class]]
 class is equal to another instance of the same type.
 
     public bool Equals(
-        PublicKey other)
+        PublicKey? other)
 
 #### Parameters
 
@@ -166,6 +166,34 @@ NotSupportedException
 : The algorithm for the public key does not support exporting public keys.
 
 
+### GetExportBlobSize(KeyBlobFormat)
+
+Returns the BLOB size of the public key if it were exported in the specified
+format.
+
+    public int GetExportBlobSize(
+        KeyBlobFormat format)
+
+#### Parameters
+
+format
+: One of the [[KeyBlobFormat|KeyBlobFormat Enum]] values that specifies the
+    format of the public key BLOB.
+
+#### Return Value
+
+The size (in bytes) of the public key if it were exported as a BLOB in the
+specified format.
+
+#### Exceptions
+
+ArgumentException
+: The algorithm for the public key does not support the specified format.
+
+NotSupportedException
+: The algorithm for the public key does not support exporting public keys.
+
+
 ### GetHashCode()
 
 Returns the hash code for the current [[PublicKey|PublicKey Class]] object.
@@ -185,6 +213,45 @@ hash code is **not** a fingerprint that can be used to identify the public key.
 
 The hash code returned may differ between NSec versions and platforms, such as
 32-bit and 64-bit platforms.
+
+
+### TryExport(KeyBlobFormat, Span<byte>, out int)
+
+Exports the public key as a public key BLOB in the specified format and attempts
+to fill the specified span of bytes with the BLOB.
+
+    public bool TryExport(
+        KeyBlobFormat format,
+        Span<byte> blob,
+        out int blobSize)
+
+#### Parameters
+
+format
+: One of the [[KeyBlobFormat|KeyBlobFormat Enum]] values that specifies the
+    format of the public key BLOB.
+
+blob
+: The span to fill with the exported public key BLOB.
+    The length of the span must be greater than or equal to
+    `GetExportBlobSize(format)`.
+
+blobSize
+: When this method returns, contains the number of bytes written into the output
+    span.
+
+#### Return Value
+
+`false` if there is not enough space in the output span to write the public key
+BLOB; otherwise `true`.
+
+#### Exceptions
+
+ArgumentException
+: The algorithm for the public key does not support the specified format.
+
+NotSupportedException
+: The algorithm for the public key does not support exporting public keys.
 
 
 ## Thread Safety

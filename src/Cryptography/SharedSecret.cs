@@ -48,7 +48,7 @@ namespace NSec.Cryptography
             Sodium.Initialize();
 
             ReadOnlyMemory<byte> memory = default;
-            IMemoryOwner<byte> owner = default;
+            IMemoryOwner<byte>? owner = default;
             bool success = false;
 
             try
@@ -74,7 +74,7 @@ namespace NSec.Cryptography
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public override string ToString()
+        public override string? ToString()
         {
             return typeof(SharedSecret).ToString();
         }

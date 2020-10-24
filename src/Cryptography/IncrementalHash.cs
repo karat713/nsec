@@ -10,14 +10,14 @@ namespace NSec.Cryptography
     public readonly struct IncrementalHash
     {
         private readonly IncrementalHashState _state;
-        private readonly HashAlgorithm _algorithm;
+        private readonly HashAlgorithm? _algorithm;
 
-        public HashAlgorithm Algorithm => _algorithm;
+        public HashAlgorithm? Algorithm => _algorithm;
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static new bool Equals(
-            object objA,
-            object objB)
+            object? objA,
+            object? objB)
         {
             return object.Equals(objA, objB);
         }
@@ -38,7 +38,7 @@ namespace NSec.Cryptography
             }
             finally
             {
-                Unsafe.AsRef(in state._algorithm) = null;
+                Unsafe.AsRef<HashAlgorithm?>(in state._algorithm) = null;
             }
         }
 
@@ -61,7 +61,7 @@ namespace NSec.Cryptography
             }
             finally
             {
-                Unsafe.AsRef(in state._algorithm) = null;
+                Unsafe.AsRef<HashAlgorithm?>(in state._algorithm) = null;
             }
         }
 
@@ -80,7 +80,7 @@ namespace NSec.Cryptography
             }
             finally
             {
-                Unsafe.AsRef(in state._algorithm) = null;
+                Unsafe.AsRef<HashAlgorithm?>(in state._algorithm) = null;
             }
         }
 
@@ -100,8 +100,8 @@ namespace NSec.Cryptography
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static new bool ReferenceEquals(
-            object objA,
-            object objB)
+            object? objA,
+            object? objB)
         {
             return object.ReferenceEquals(objA, objB);
         }
@@ -120,7 +120,7 @@ namespace NSec.Cryptography
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public override bool Equals(
-            object obj)
+            object? obj)
         {
             throw Error.NotSupported_Operation();
         }
@@ -132,7 +132,7 @@ namespace NSec.Cryptography
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public override string ToString()
+        public override string? ToString()
         {
             return typeof(IncrementalHash).ToString();
         }

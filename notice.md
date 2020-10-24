@@ -12,7 +12,7 @@ permission except when reproducing the unmodified NSec documentation.
 
 [NSec](https://github.com/ektrah/nsec) is licensed under the MIT license.
 
-Copyright &copy; 2019 Klaus Hartke
+Copyright &copy; 2020 Klaus Hartke
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@ NSec is based on and contains code derived from
 [libsodium](https://github.com/jedisct1/libsodium),
 which is available under the ISC license.
 
-Copyright &copy; 2013-2019 Frank Denis
+Copyright &copy; 2013-2020 Frank Denis
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -60,7 +60,7 @@ NSec contains code derived from the sample code in
 [RFC 6234](https://tools.ietf.org/html/rfc6234),
 which is available under a Simplified BSD License.
 
-Copyright &copy; 2011 IETF Trust and the persons identified as authors of the code.
+Copyright &copy; 2011 IETF Trust and the persons identified as authors of the code.  
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -91,10 +91,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## License Notice for .NET Core Libraries
 
 NSec contains code derived from the
-[.NET Core Libraries](https://github.com/dotnet/corefx/),
+[.NET Core Libraries](https://github.com/dotnet/runtime),
 which are available under the MIT license.
 
-Copyright &copy; .NET Foundation and Contributors
+Copyright &copy; .NET Foundation and Contributors  
 All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -122,7 +122,8 @@ NSec contains code derived from libraries in the
 [.NET Core Lab](https://github.com/dotnet/corefxlab/),
 which are available under the MIT license.
 
-Copyright &copy; Microsoft Corporation
+Copyright &copy; .NET Foundation and Contributors  
+All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

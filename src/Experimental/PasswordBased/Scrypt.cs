@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using NSec.Cryptography;
 using static Interop.Libsodium;
 
 namespace NSec.Experimental.PasswordBased
@@ -30,6 +32,7 @@ namespace NSec.Experimental.PasswordBased
     //          the 'opslimit' and 'memlimit' arguments.
     //
     //      Output Size - A positive integer less than or equal to (2^32-1)*32.
+    //          libsodium requires this parameter to be at least 16 bytes.
     //
     //  Parameter Presets
     //
@@ -51,24 +54,24 @@ namespace NSec.Experimental.PasswordBased
         {
         }
 
-        internal /*public*/ unsafe Scrypt(long n, int r, int p) : base(
+        internal /*public*/ Scrypt(long n, int r, int p) : base(
             saltSize: crypto_pwhash_scryptsalsa208sha256_SALTBYTES,
             maxCount: int.MaxValue)
         {
-            if (n <= 1 || n > uint.MaxValue || (n & (n - 1)) != 0)
+            // checks from libsodium/crypto_pwhash/scryptsalsa208sha256/nosse/pwhash_scryptsalsa208sha256_nosse.c
+            if (n < 2 || n > uint.MaxValue || unchecked(n & (n - 1)) != 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(n));
             }
-            if (r <= 0 || p <= 0 || (long)r * p >= 1 << 30)
+            if (r < 1 || p < 1 || (long)r * p >= 1 << 30)
             {
                 throw new ArgumentOutOfRangeException(nameof(r));
             }
-            if ((sizeof(byte*) == sizeof(uint) ? n > (int)(uint.MaxValue / 128) / r : n > (long)(ulong.MaxValue / 128) / r))
+            if (IntPtr.Size == sizeof(long) ? n > (long)(ulong.MaxValue / 128) / r : n > (int)(uint.MaxValue / 128) / r)
             {
                 throw new ArgumentOutOfRangeException(nameof(n));
             }
-            if ((sizeof(byte*) == sizeof(uint) ? r > (int)(uint.MaxValue / 128) / p : r > (long)(ulong.MaxValue / 128) / p) ||
-                (sizeof(byte*) == sizeof(uint) ? r > (int)(uint.MaxValue / 256) : false))
+            if (IntPtr.Size == sizeof(long) ? r > (long)(ulong.MaxValue / 128) / p : r > (int)(uint.MaxValue / 128) / p || r > (int)(uint.MaxValue / 256))
             {
                 throw new ArgumentOutOfRangeException(nameof(r));
             }
@@ -95,6 +98,8 @@ namespace NSec.Experimental.PasswordBased
             ReadOnlySpan<byte> salt,
             Span<byte> bytes)
         {
+            Debug.Assert(salt.Length == crypto_pwhash_scryptsalsa208sha256_SALTBYTES);
+
             const int MinCount = crypto_pwhash_scryptsalsa208sha256_BYTES_MIN;
             bool min = bytes.Length < MinCount;
             byte* temp = stackalloc byte[MinCount];
@@ -130,14 +135,18 @@ namespace NSec.Experimental.PasswordBased
             }
         }
 
-        private static unsafe bool SelfTest()
+        private static void SelfTest()
         {
-            return (crypto_pwhash_scryptsalsa208sha256_bytes_min() == (UIntPtr)crypto_pwhash_scryptsalsa208sha256_BYTES_MIN)
-                && (crypto_pwhash_scryptsalsa208sha256_memlimit_min() == (UIntPtr)(sizeof(byte*) == sizeof(uint) ? uint.MaxValue : 0x1000000000))
-                && (crypto_pwhash_scryptsalsa208sha256_memlimit_min() == (UIntPtr)crypto_pwhash_scryptsalsa208sha256_MEMLIMIT_MIN)
-                && (crypto_pwhash_scryptsalsa208sha256_opslimit_max() == (UIntPtr)uint.MaxValue)
-                && (crypto_pwhash_scryptsalsa208sha256_opslimit_min() == (UIntPtr)crypto_pwhash_scryptsalsa208sha256_OPSLIMIT_MIN)
-                && (crypto_pwhash_scryptsalsa208sha256_saltbytes() == (UIntPtr)crypto_pwhash_scryptsalsa208sha256_SALTBYTES);
+            if ((crypto_pwhash_scryptsalsa208sha256_bytes_max() != (UIntPtr)(IntPtr.Size == sizeof(long) ? 0x1fffffffe0 : uint.MaxValue)) ||
+                (crypto_pwhash_scryptsalsa208sha256_bytes_min() != (UIntPtr)crypto_pwhash_scryptsalsa208sha256_BYTES_MIN) ||
+                (crypto_pwhash_scryptsalsa208sha256_memlimit_max() != (UIntPtr)(IntPtr.Size == sizeof(long) ? 68719476736 : uint.MaxValue)) ||
+                (crypto_pwhash_scryptsalsa208sha256_memlimit_min() != (UIntPtr)crypto_pwhash_scryptsalsa208sha256_MEMLIMIT_MIN) ||
+                (crypto_pwhash_scryptsalsa208sha256_opslimit_max() != (UIntPtr)uint.MaxValue) ||
+                (crypto_pwhash_scryptsalsa208sha256_opslimit_min() != (UIntPtr)crypto_pwhash_scryptsalsa208sha256_OPSLIMIT_MIN) ||
+                (crypto_pwhash_scryptsalsa208sha256_saltbytes() != (UIntPtr)crypto_pwhash_scryptsalsa208sha256_SALTBYTES))
+            {
+                throw Error.InvalidOperation_InitializationFailed();
+            }
         }
     }
 }

@@ -10,14 +10,14 @@ namespace NSec.Cryptography
     public readonly struct IncrementalMac
     {
         private readonly IncrementalMacState _state;
-        private readonly MacAlgorithm _algorithm;
+        private readonly MacAlgorithm? _algorithm;
 
-        public MacAlgorithm Algorithm => _algorithm;
+        public MacAlgorithm? Algorithm => _algorithm;
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static new bool Equals(
-            object objA,
-            object objB)
+            object? objA,
+            object? objB)
         {
             return object.Equals(objA, objB);
         }
@@ -38,7 +38,7 @@ namespace NSec.Cryptography
             }
             finally
             {
-                Unsafe.AsRef(in state._algorithm) = null;
+                Unsafe.AsRef<MacAlgorithm?>(in state._algorithm) = null;
             }
         }
 
@@ -61,7 +61,7 @@ namespace NSec.Cryptography
             }
             finally
             {
-                Unsafe.AsRef(in state._algorithm) = null;
+                Unsafe.AsRef<MacAlgorithm?>(in state._algorithm) = null;
             }
         }
 
@@ -80,7 +80,7 @@ namespace NSec.Cryptography
             }
             finally
             {
-                Unsafe.AsRef(in state._algorithm) = null;
+                Unsafe.AsRef<MacAlgorithm?>(in state._algorithm) = null;
             }
         }
 
@@ -94,7 +94,7 @@ namespace NSec.Cryptography
             }
             if (!(key.Algorithm is MacAlgorithm algorithm))
             {
-                throw Error.Argument_MacKey(nameof(key), key.Algorithm.GetType().FullName, typeof(MacAlgorithm).FullName);
+                throw Error.Argument_MacKeyRequired(nameof(key));
             }
 
             state = default;
@@ -104,8 +104,8 @@ namespace NSec.Cryptography
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static new bool ReferenceEquals(
-            object objA,
-            object objB)
+            object? objA,
+            object? objB)
         {
             return object.ReferenceEquals(objA, objB);
         }
@@ -124,7 +124,7 @@ namespace NSec.Cryptography
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public override bool Equals(
-            object obj)
+            object? obj)
         {
             throw Error.NotSupported_Operation();
         }
@@ -136,7 +136,7 @@ namespace NSec.Cryptography
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public override string ToString()
+        public override string? ToString()
         {
             return typeof(IncrementalMac).ToString();
         }

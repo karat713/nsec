@@ -14,15 +14,16 @@ namespace NSec.Experimental.PasswordBased
     //
     //      | Algorithm | Reference                 |
     //      | --------- | ------------------------- |
-    //      | Argon2d   | draft-irtf-cfrg-argon2-08 |
-    //      | Argon2i   | draft-irtf-cfrg-argon2-08 |
-    //      | Argon2id  | draft-irtf-cfrg-argon2-08 |
+    //      | Argon2d   | draft-irtf-cfrg-argon2-11 |
+    //      | Argon2i   | draft-irtf-cfrg-argon2-11 |
+    //      | Argon2id  | draft-irtf-cfrg-argon2-11 |
     //      | scrypt    | RFC 7914                  |
     //
     public abstract class PasswordBasedKeyDerivationAlgorithm : Algorithm
     {
-        private static Argon2i s_Argon2i;
-        private static Scrypt s_Scrypt;
+        private static Argon2i? s_Argon2i;
+        private static Argon2id? s_Argon2id;
+        private static Scrypt? s_Scrypt;
 
         private readonly int _maxCount;
         private readonly int _saltSize;
@@ -42,7 +43,7 @@ namespace NSec.Experimental.PasswordBased
         {
             get
             {
-                Argon2i instance = s_Argon2i;
+                Argon2i? instance = s_Argon2i;
                 if (instance == null)
                 {
                     Interlocked.CompareExchange(ref s_Argon2i, new Argon2i(), null);
@@ -52,11 +53,25 @@ namespace NSec.Experimental.PasswordBased
             }
         }
 
+        public static Argon2id Argon2id
+        {
+            get
+            {
+                Argon2id? instance = s_Argon2id;
+                if (instance == null)
+                {
+                    Interlocked.CompareExchange(ref s_Argon2id, new Argon2id(), null);
+                    instance = s_Argon2id;
+                }
+                return instance;
+            }
+        }
+
         public static Scrypt Scrypt
         {
             get
             {
-                Scrypt instance = s_Scrypt;
+                Scrypt? instance = s_Scrypt;
                 if (instance == null)
                 {
                     Interlocked.CompareExchange(ref s_Scrypt, new Scrypt(), null);
@@ -87,7 +102,7 @@ namespace NSec.Experimental.PasswordBased
             byte[] bytes = new byte[count];
             if (!TryDeriveBytesCore(MemoryMarshal.AsBytes(password.AsSpan()), salt, bytes))
             {
-                throw null; // TODO
+                throw new NotImplementedException(); // TODO
             }
             return bytes;
         }
@@ -108,7 +123,7 @@ namespace NSec.Experimental.PasswordBased
 
             if (!TryDeriveBytesCore(MemoryMarshal.AsBytes(password.AsSpan()), salt, bytes))
             {
-                throw null; // TODO
+                throw new NotImplementedException(); // TODO
             }
         }
 
@@ -131,8 +146,8 @@ namespace NSec.Experimental.PasswordBased
             Debug.Assert(seedSize <= 64);
 
             ReadOnlyMemory<byte> memory = default;
-            IMemoryOwner<byte> owner = default;
-            PublicKey publicKey = default;
+            IMemoryOwner<byte>? owner = default;
+            PublicKey? publicKey = default;
             bool success = false;
 
             try
@@ -142,7 +157,7 @@ namespace NSec.Experimental.PasswordBased
                 {
                     if (!TryDeriveBytesCore(MemoryMarshal.AsBytes(password.AsSpan()), salt, seed))
                     {
-                        throw null; // TODO
+                        throw new NotImplementedException(); // TODO
                     }
                     algorithm.CreateKey(seed, creationParameters.GetMemoryPool(), out memory, out owner, out publicKey);
                     success = true;

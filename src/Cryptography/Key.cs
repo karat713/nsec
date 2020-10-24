@@ -12,7 +12,7 @@ namespace NSec.Cryptography
         private readonly IDisposable _disposable;
         private readonly KeyExportPolicies _exportPolicy;
         private readonly ReadOnlyMemory<byte> _memory;
-        private readonly PublicKey _publicKey;
+        private readonly PublicKey? _publicKey;
 
         private bool _disposed;
         private bool _exported;
@@ -30,8 +30,8 @@ namespace NSec.Cryptography
             Debug.Assert(seedSize <= 64);
 
             ReadOnlyMemory<byte> memory = default;
-            IMemoryOwner<byte> owner = default;
-            PublicKey publicKey = default;
+            IMemoryOwner<byte>? owner = default;
+            PublicKey? publicKey = default;
             bool success = false;
 
             try
@@ -68,11 +68,8 @@ namespace NSec.Cryptography
             in KeyCreationParameters creationParameters,
             ReadOnlyMemory<byte> memory,
             IDisposable owner,
-            PublicKey publicKey)
+            PublicKey? publicKey)
         {
-            Debug.Assert(algorithm != null);
-            Debug.Assert(owner != null);
-
             _algorithm = algorithm;
             _exportPolicy = creationParameters.ExportPolicy;
             _memory = memory;
@@ -84,7 +81,9 @@ namespace NSec.Cryptography
 
         public KeyExportPolicies ExportPolicy => _exportPolicy;
 
-        public PublicKey PublicKey => _publicKey;
+        public bool HasPublicKey => _publicKey != null;
+
+        public PublicKey PublicKey => _publicKey ?? throw Error.InvalidOperation_NoPublicKey();
 
         public int Size => _algorithm.GetKeySize();
 
@@ -120,8 +119,8 @@ namespace NSec.Cryptography
             }
 
             ReadOnlyMemory<byte> memory = default;
-            IMemoryOwner<byte> owner = default;
-            PublicKey publicKey = default;
+            IMemoryOwner<byte>? owner = default;
+            PublicKey? publicKey = default;
             bool success = false;
 
             try
@@ -136,7 +135,7 @@ namespace NSec.Cryptography
                 }
             }
 
-            if (!success)
+            if (!success || owner == null)
             {
                 throw Error.Format_InvalidBlob();
             }
@@ -148,7 +147,7 @@ namespace NSec.Cryptography
             Algorithm algorithm,
             ReadOnlySpan<byte> blob,
             KeyBlobFormat format,
-            out Key result,
+            out Key? result,
             in KeyCreationParameters creationParameters = default)
         {
             if (algorithm == null)
@@ -157,8 +156,8 @@ namespace NSec.Cryptography
             }
 
             ReadOnlyMemory<byte> memory = default;
-            IMemoryOwner<byte> owner = default;
-            PublicKey publicKey = default;
+            IMemoryOwner<byte>? owner = default;
+            PublicKey? publicKey = default;
             bool success = false;
 
             try
@@ -173,7 +172,7 @@ namespace NSec.Cryptography
                 }
             }
 
-            result = success ? new Key(algorithm, in creationParameters, memory, owner, publicKey) : null;
+            result = success && owner != null ? new Key(algorithm, in creationParameters, memory, owner, publicKey) : null;
             return success;
         }
 
@@ -208,8 +207,6 @@ namespace NSec.Cryptography
                     }
                 }
 
-                _exported = true;
-
                 _algorithm.TryExportKey(_memory.Span, format, Span<byte>.Empty, out blobSize);
                 blob = new byte[blobSize];
 
@@ -219,6 +216,7 @@ namespace NSec.Cryptography
                 }
 
                 Debug.Assert(blobSize == blob.Length);
+                _exported = true;
                 return blob;
             }
             else
@@ -241,10 +239,85 @@ namespace NSec.Cryptography
             }
         }
 
+        public int GetExportBlobSize(
+            KeyBlobFormat format)
+        {
+            int blobSize;
+
+            if (format < 0)
+            {
+                if (_disposed)
+                {
+                    throw new ObjectDisposedException(typeof(Key).FullName);
+                }
+
+                _algorithm.TryExportKey(_memory.Span, format, Span<byte>.Empty, out blobSize);
+            }
+            else
+            {
+                if (_publicKey == null)
+                {
+                    throw Error.Argument_FormatNotSupported(nameof(format), format.ToString());
+                }
+
+                _algorithm.TryExportPublicKey(_publicKey, format, Span<byte>.Empty, out blobSize);
+            }
+
+            return blobSize;
+        }
+
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public override string ToString()
+        public override string? ToString()
         {
             return typeof(Key).ToString();
+        }
+
+        public bool TryExport(
+            KeyBlobFormat format,
+            Span<byte> blob,
+            out int blobSize)
+        {
+            if (format < 0)
+            {
+                if (_disposed)
+                {
+                    throw new ObjectDisposedException(typeof(Key).FullName);
+                }
+
+                if ((_exportPolicy & KeyExportPolicies.AllowPlaintextExport) == 0)
+                {
+                    if ((_exportPolicy & KeyExportPolicies.AllowPlaintextArchiving) == 0)
+                    {
+                        throw Error.InvalidOperation_ExportNotAllowed();
+                    }
+                    if (_exported)
+                    {
+                        throw Error.InvalidOperation_AlreadyArchived();
+                    }
+                }
+
+                if (!_algorithm.TryExportKey(_memory.Span, format, blob, out blobSize))
+                {
+                    return false;
+                }
+
+                _exported = true;
+                return true;
+            }
+            else
+            {
+                if (_publicKey == null)
+                {
+                    throw Error.Argument_FormatNotSupported(nameof(format), format.ToString());
+                }
+
+                if (!_algorithm.TryExportPublicKey(_publicKey, format, blob, out blobSize))
+                {
+                    return false;
+                }
+
+                return true;
+            }
         }
     }
 }

@@ -7,7 +7,7 @@ namespace NSec.Tests.Rfc
 {
     public static class XChaCha20Poly1305Tests
     {
-        // draft-irtf-cfrg-xchacha-01
+        // draft-irtf-cfrg-xchacha-03
         public static readonly TheoryData<string[]> TestVectors = new TheoryData<string[]>
         {
             // Appendix A.1
@@ -27,14 +27,13 @@ namespace NSec.Tests.Rfc
 
             var a = new XChaCha20Poly1305();
 
-            using (var k = Key.Import(a, key.DecodeHex(), KeyBlobFormat.RawSymmetricKey))
-            {
-                var b = a.Encrypt(k, new Nonce(nonce.DecodeHex(), 0), aad.DecodeHex(), plaintext.DecodeHex());
-                Assert.Equal((ciphertext + tag).DecodeHex(), b);
+            using var k = Key.Import(a, key.DecodeHex(), KeyBlobFormat.RawSymmetricKey);
 
-                Assert.True(a.Decrypt(k, new Nonce(nonce.DecodeHex(), 0), aad.DecodeHex(), b, out var r));
-                Assert.Equal(plaintext.DecodeHex(), r);
-            }
+            var b = a.Encrypt(k, new Nonce(nonce.DecodeHex(), 0), aad.DecodeHex(), plaintext.DecodeHex());
+            Assert.Equal((ciphertext + tag).DecodeHex(), b);
+
+            Assert.True(a.Decrypt(k, new Nonce(nonce.DecodeHex(), 0), aad.DecodeHex(), b, out var r));
+            Assert.Equal(plaintext.DecodeHex(), r);
         }
     }
 }

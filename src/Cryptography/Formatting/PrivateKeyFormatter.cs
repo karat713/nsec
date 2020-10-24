@@ -35,7 +35,6 @@ namespace NSec.Cryptography.Formatting
             byte[] blobHeader)
         {
             Debug.Assert(keySize > 0);
-            Debug.Assert(blobHeader != null);
 
             _keySize = keySize;
             _blobHeader = blobHeader;
@@ -56,7 +55,7 @@ namespace NSec.Cryptography.Formatting
             }
 
             _blobHeader.CopyTo(blob);
-            Serialize(privateKeyBytes, blob.Slice(_blobHeader.Length));
+            Serialize(privateKeyBytes, blob.Slice(_blobHeader.Length, _keySize));
             return true;
         }
 
@@ -78,7 +77,7 @@ namespace NSec.Cryptography.Formatting
                 _blobHeader.CopyTo(temp);
                 Serialize(privateKeyBytes, temp.Slice(_blobHeader.Length));
 
-                Armor.EncodeToUtf8(temp, s_beginLabel, s_endLabel, blob);
+                Armor.EncodeToUtf8(temp, s_beginLabel, s_endLabel, blob.Slice(0, _blobTextSize));
                 return true;
             }
             finally
@@ -91,7 +90,7 @@ namespace NSec.Cryptography.Formatting
             ReadOnlySpan<byte> blob,
             MemoryPool<byte> memoryPool,
             out ReadOnlyMemory<byte> memory,
-            out IMemoryOwner<byte> owner,
+            out IMemoryOwner<byte>? owner,
             out PublicKeyBytes publicKeyBytes)
         {
             if (blob.Length != _blobSize || !blob.StartsWith(_blobHeader))
@@ -110,7 +109,7 @@ namespace NSec.Cryptography.Formatting
             ReadOnlySpan<byte> blob,
             MemoryPool<byte> memoryPool,
             out ReadOnlyMemory<byte> memory,
-            out IMemoryOwner<byte> owner,
+            out IMemoryOwner<byte>? owner,
             out PublicKeyBytes publicKeyBytes)
         {
             Span<byte> temp = stackalloc byte[_blobSize];

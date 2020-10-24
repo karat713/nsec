@@ -1,13 +1,13 @@
 # NSec
 
 NSec is a modern and easy-to-use cryptographic library for
-[.NET Core](https://dot.net/core) based on
+[.NET Core](https://docs.microsoft.com/en-us/dotnet/core/) based on
 [libsodium](https://libsodium.org/).
 
 * **Modern** -- libsodium provides a small set of high-quality, modern
 cryptographic primitives, including X25519, Ed25519 and ChaCha20-Poly1305. NSec
 wraps these primitives in a modern .NET API based on [the new `Span<T>` and
-`ReadOnlySpan<T>` types](https://msdn.microsoft.com/en-us/magazine/mt814808).
+`ReadOnlySpan<T>` types](https://docs.microsoft.com/en-us/archive/msdn-magazine/2017/connect/csharp-all-about-span-exploring-a-new-net-mainstay).
 
 * **Easy-to-use** -- NSec wants you to fall into the "pit of success." It
 provides a strongly typed data model that represents keys and shared secrets
@@ -43,34 +43,25 @@ and verify the signature:
 
 ## Installation
 
-    $ dotnet add package NSec.Cryptography --version 19.5.0
+    $ dotnet add package NSec.Cryptography --version 20.2.0
 
-NSec runs on .NET Core 2.2 and 2.1 on Windows, Linux and Mac, and requires
-a C# 7.2 or F# 4.5 compiler (or later). See [[Installation]] for more details.
+NSec works with .NET Core 3.1 and 2.1 on Windows, Linux and macOS.
+
+See [[Installation]] for more information.
 
 
 ## Documentation
 
-### API Reference
+| Class                            | Algorithms                                      |
+|:-------------------------------- |:----------------------------------------------- |
+| [[AeadAlgorithm Class]]          | AES256-GCM &bull; ChaCha20-Poly1305             |
+| [[HashAlgorithm Class]]          | BLAKE2b &bull; SHA-256 &bull; SHA-512           |
+| [[KeyAgreementAlgorithm Class]]  | X25519                                          |
+| [[KeyDerivationAlgorithm Class]] | HKDF-SHA-256 &bull; HKDF-SHA-512                |
+| [[MacAlgorithm Class]]           | BLAKE2b &bull; HMAC-SHA-256 &bull; HMAC-SHA-512 |
+| [[SignatureAlgorithm Class]]     | Ed25519                                         |
 
-* [[Algorithm Class]]
-    * [[AeadAlgorithm Class]]
-    * [[HashAlgorithm Class]]
-    * [[KeyAgreementAlgorithm Class]]
-    * [[KeyDerivationAlgorithm Class]]
-    * [[MacAlgorithm Class]]
-    * [[SignatureAlgorithm Class]]
-* [[IncrementalHash Struct]]
-* [[IncrementalMac Struct]]
-* [[Key Class]]
-    * [[KeyCreationParameters Struct]]
-    * [[KeyExportPolicies Enum]]
-    * [[KeyBlobFormat Enum]]
-* [[Nonce Struct]]
-* [[PublicKey Class]]
-* [[RandomGenerator Class]]
-* [[SharedSecret Class]]
-    * [[SharedSecretCreationParameters Struct]]
+See [[API Reference|NSec.Cryptography Namespace]] for more information.
 
 
 ## Contributing
